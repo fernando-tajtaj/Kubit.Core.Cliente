@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Kubit.Core.Modelo">
+      <HintPath>..\..\..\Binarios\Core.Modelo\x64\Release\net8.0\Kubit.Core.Modelo.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

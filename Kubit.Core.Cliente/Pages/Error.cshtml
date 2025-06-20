@@ -1,0 +1,37 @@
+﻿@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<h1 class="text-danger">Oops! Algo salió mal.</h1>
+<h2 class="text-danger">Ha ocurrido un error al procesar tu solicitud.</h2>
+
+@if (Model.ShowRequestId && !string.IsNullOrEmpty(Model.RequestId))
+{
+    <p>
+        <strong>ID de la solicitud:</strong> <code>@Model.RequestId</code>
+    </p>
+}
+
+@if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+{
+    <section class="mt-4">
+        <h3>Modo Desarrollo</h3>
+        <p>
+            Estás en modo <strong>Desarrollo</strong>. Aquí se muestran detalles detallados del error para ayudarte a depurar.
+        </p>
+        <p>
+            <strong>Recuerda:</strong> No debes habilitar este modo en ambientes de producción para evitar exponer información sensible.
+        </p>
+    </section>
+}
+else
+{
+    <section class="mt-4">
+        <p>
+            Por favor intenta nuevamente más tarde o contacta al administrador si el problema persiste.
+        </p>
+    </section>
+}
+

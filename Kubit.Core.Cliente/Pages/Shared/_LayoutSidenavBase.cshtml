@@ -1,0 +1,59 @@
+﻿@using Kubit.Core.Modelo
+@model List<Kubit.Core.Modelo.Fn_Menu_Permisos>
+
+@{
+    IOrderedEnumerable<Kubit.Core.Modelo.Fn_Menu_Permisos> parents = 
+    new List<Kubit.Core.Modelo.Fn_Menu_Permisos>().OrderBy(x => 0);
+
+    if (Model is not null)
+    {
+        parents = Model
+        .Where(x => x.UuidMenuPadre == null)
+        .OrderBy(x => x.MenuOrden);
+    }
+}
+
+@foreach (var parent in parents)
+{
+    var children = Model == null 
+    ? new List<Fn_Menu_Permisos>() 
+    : Model.Where(x => x.UuidMenuPadre == parent.MenuUuid)
+           .OrderBy(x => x.MenuOrden)
+           .ToList();
+
+    var hasChildren = children.Any();
+    var collapseId = $"menu_{parent.MenuPermisoUuid}";
+    var icon = parent.MenuIcono;
+    var name = parent.MenuNombre;
+
+    <div class="nav-item">
+        @if (hasChildren)
+        {
+            <a class="nav-link d-flex align-items-center"
+               data-bs-toggle="collapse"
+               data-bs-target="#@collapseId"
+               role="button"
+               aria-expanded="false"
+               aria-controls="@collapseId">
+                <span class="material-symbols-outlined me-2">@icon</span>
+                <span>@name</span>
+            </a>
+
+            <div class="collapse ms-4 mt-1" id="@collapseId">
+                <nav class="nav nav-pills flex-column">
+                    @foreach (var child in children)
+                    {
+                        <a class="nav-link ps-4" href="@child.ProgramaRuta">@child.MenuNombre</a>
+                    }
+                </nav>
+            </div>
+        }
+        else
+        {
+            <a class="nav-link d-flex align-items-center" href="@parent.ProgramaRuta">
+                <span class="material-symbols-outlined me-2">@icon</span>
+                <span>@name</span>
+            </a>
+        }
+    </div>
+}

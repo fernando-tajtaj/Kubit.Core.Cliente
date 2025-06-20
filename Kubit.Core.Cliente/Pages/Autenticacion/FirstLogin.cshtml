@@ -1,0 +1,58 @@
+﻿@page "FirstLogin"
+
+@model Kubit.Core.Cliente.Pages.Autenticacion.FirstLoginModel
+
+@{
+    Layout = "~/Pages/Shared/_LayoutLogin.cshtml";
+}
+
+@{
+    var message = TempData["Message"];
+    var horaActual = DateTime.Now.ToString("HH:mm");
+}
+
+@if (message != null && !string.IsNullOrEmpty(message.ToString()))
+{
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="liveToast" class="toast text-bg-warning border-white" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                <div class="toast-header bg-warning">
+                    <strong class="me-auto">Autenticación</strong>
+                    <small>justo ahora</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+                </div>
+                <div class="toast-body">
+                    @message.ToString()
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-lg">
+    <div class="row g-0">
+        <div class="d-none d-md-flex col-md-6 bg-image"></div>
+        <div class="col-md-6">
+            <div class="login-container">
+                <h3 class="login-heading">¡Bienvenido de nuevo! Por favor, cambia tu contraseña.</h3>
+                <form method="post">
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" name="pUsuarioContraseniaActual" placeholder="Contraseña actual" required>
+                        <label for="floatingPassword">Contraseña actual</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" name="pUsuarioContraseniaNueva" placeholder="Nueva contraseña" required>
+                        <label for="floatingPassword">Nueva contraseña</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" name="pUsuarioContraseniaConfirmada" placeholder="Confirmar nueva contraseña" required>
+                        <label for="floatingPassword">Confirmar nueva contraseña</label>
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary btn-login fw-bold" type="submit">Cambiar contraseña</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

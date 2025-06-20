@@ -1,0 +1,82 @@
+﻿@page "/MainGrid"
+
+@model Kubit.Core.Cliente.Pages.MainGridModel
+@{
+    var Datos = this.Model.Datos ?? new List<Dictionary<string, object>>();
+    var Columnas = Datos.FirstOrDefault()?.Keys;
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item fw-bold">@this.Model.MenuPadre</li>
+        <li class="breadcrumb-item fw-bold" aria-current="page">@this.Model.MenuHijo</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="btn-group ms-auto" role="group" aria-label="Button group with nested dropdown">
+        <button class="btn btn-light d-flex align-items-center gap-2"
+                onclick="openModalForm('valorcatalogo')">
+            <span class="material-symbols-outlined fs-5">new_window</span>
+            <span class="fw-bold">Agregar</span>
+        </button>
+
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="fw-bold">Exportar</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Excel</a></li>
+                <li><a class="dropdown-item" href="#">PDF</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            @foreach (var col in Columnas)
+            {
+                <th scope="col">@col</th>
+            }
+            <th scope="col"></th> <!-- Para botones -->
+        </tr>
+    </thead>
+    <tbody>
+        @if (Datos.Any())
+        {
+            var index = 1;
+            foreach (var fila in Datos)
+            {
+                <tr>
+                    <th scope="row">@index</th>
+                    @foreach (var col in Columnas)
+                    {
+                        <td>@(fila.ContainsKey(col) ? fila[col]?.ToString() : "")</td>
+                    }
+                    <td>
+                        <button class="btn btn-light btn-sm p-1">
+                            <span class="material-symbols-outlined fs-5">edit</span>
+                        </button>
+                        <button class="btn btn-light btn-sm p-1">
+                            <span class="material-symbols-outlined fs-5">delete</span>
+                        </button>
+                    </td>
+                </tr>
+                index++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5">Sin datos</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script type="text/javascript" src="~/js/mainform.js"></script>
+<script type="text/javascript" src="~/js/Plantillas/functionModal.js"></script>
+<script type="text/javascript" src="~/js/Plantillas/functionDropdownList.js"></script>
