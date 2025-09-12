@@ -6,6 +6,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+function changeThemeGrid(theme) {
+    const grids = document.querySelectorAll('[class*="ag-theme-params-"]');
+
+    grids.forEach(gridEl => {
+        gridEl.classList.forEach(cls => {
+            if (cls.startsWith('ag-theme-params-')) {
+                gridEl.classList.remove(cls);
+            }
+        });
+
+        gridEl.classList.add(`ag-theme-params-${theme}`);
+    });
+}
+
 (() => {
     'use strict';
 
@@ -44,9 +58,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const setTheme = (theme) => {
         if (theme === 'auto') {
-            document.documentElement.setAttribute('data-bs-theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-bs-theme', darkMode ? 'dark' : 'light');
+            changeThemeGrid(darkMode ? 4 : 1);
         } else {
             document.documentElement.setAttribute('data-bs-theme', theme);
+            changeThemeGrid(theme === 'dark' ? 4 : 1);
         }
     };
 

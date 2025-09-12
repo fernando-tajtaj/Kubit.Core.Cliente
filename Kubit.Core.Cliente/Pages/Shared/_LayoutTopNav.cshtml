@@ -1,9 +1,9 @@
-﻿@using Kubit.Core.Modelo
-@model List<Kubit.Core.Modelo.Fn_Menu_Permisos>
+﻿@using Kubit.Core.Modelo.Schemas.Seguridad
+@model List<Fn_Menu_Permisos>
 
 @{
-    IOrderedEnumerable<Kubit.Core.Modelo.Fn_Menu_Permisos> parents = 
-    new List<Kubit.Core.Modelo.Fn_Menu_Permisos>().OrderBy(x => 0);
+    IOrderedEnumerable<Fn_Menu_Permisos> parents = 
+    new List<Fn_Menu_Permisos>().OrderBy(x => 0);
 
     if (Model is not null)
     {
@@ -38,9 +38,9 @@
             <div class="dropdown-menu">
             @foreach (var child in children)
             {
-                <form method="post" asp-page="/MainGrid">
+                <form method="post" asp-page="@child.ProgramaRuta">
                     <input type="hidden" name="ProgramaUuid" value="@child.ProgramaUuid" />
-                    <input type="hidden" name="Directorio" value="@(parent.MenuNombre + ";" + child.MenuNombre)" />
+                    <input type="hidden" name="Directorio" value="@(parent.MenuNombre + " / " + child.MenuNombre)" />
                     <button class="dropdown-item" type="submit">@child.MenuNombre</button>
                 </form>
             }
@@ -48,7 +48,7 @@
         }
         else
         {
-            <form method="post" asp-page="/MainGrid">
+            <form method="post" asp-page="@parent.ProgramaRuta">
                 <input type="hidden" name="ProgramaUuid" value="@parent.ProgramaUuid" />
                 <input type="hidden" name="Directorio" value="@parent.MenuNombre" />
                 <button class="nav-link" type="submit">@parent.MenuNombre</button>

@@ -1,4 +1,4 @@
-﻿using Kubit.Core.Modelo;
+﻿using Kubit.Core.Modelo.Schemas.Sistema;
 
 namespace Kubit.Core.Cliente.Services.Sistema
 {

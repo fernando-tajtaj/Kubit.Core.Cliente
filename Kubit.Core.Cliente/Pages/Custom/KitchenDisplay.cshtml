@@ -1,0 +1,96 @@
+﻿@page
+@model Kubit.Core.Cliente.Pages.Custom.KitchenDisplayModel
+
+@{
+    ViewData["Title"] = "Kitchen Display";
+}
+
+@* <script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("https://localhost:7106/kitchenHub")
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("ReceiveOrder", (order) => {
+        console.log("Nuevo pedido:", order);
+        renderOrder(order);
+    });
+
+    connection.start()
+        .then(() => console.log("✅ Conectado a SignalR"))
+        .catch(err => console.error("❌ Error al conectar a SignalR:", err.toString()));
+
+    function renderOrder(order) {
+        const template = document.getElementById("orderCardTemplate").innerHTML;
+        let html = template
+            .replace(/{{id}}/g, order.id)
+            .replace(/{{plato}}/g, order.plato)
+            .replace(/{{cantidad}}/g, order.cantidad)
+            .replace(/{{hora}}/g, order.hora)
+            .replace(/{{estado}}/g, order.estado);
+
+        document.getElementById("ordersContainer").insertAdjacentHTML("afterbegin", html);
+    }
+
+    function markAsReady(id) {
+        const card = document.querySelector(`[data-order-id='${id}']`);
+        if (!card) return;
+
+        const badge = card.querySelector(".badge");
+        badge.classList.remove("bg-warning");
+        badge.classList.add("bg-success");
+        badge.textContent = "Listo";
+
+        const btn = card.querySelector("button");
+        btn.disabled = true;
+        btn.textContent = "Entregado ✅";
+    }
+</script> *@
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item fw-bold">@this.Model.Directorio</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="btn-group ms-auto" role="group" aria-label="Button group with nested dropdown">
+        <form method="post">
+            <button type="submit" asp-page-handler="RedirectToForm" class="btn btn-light d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-5">new_window</span>
+                <span>Agregar</span>
+            </button>
+        </form>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <span>Exportar</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Excel</a></li>
+                <li><a class="dropdown-item" href="#">PDF</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<br />
+<div class="row" id="ordersContainer">
+
+</div>
+
+@* <script type="text/template" id="orderCardTemplate">
+    <div class="col-md-4 mb-3 order-card" data-order-id="{{id}}">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">#Pedido {{id}}</h5>
+                <p><strong>Plato:</strong> {{plato}}</p>
+                <p><strong>Cantidad:</strong> {{cantidad}}</p>
+                <p><strong>Hora:</strong> {{hora}}</p>
+                <p><strong>Estado:</strong> <span class="badge bg-warning text-dark">{{estado}}</span></p>
+                <button class="btn btn-success btn-sm mt-2" onclick="markAsReady('{{id}}')">
+                    Marcar como listo
+                </button>
+            </div>
+        </div>
+    </div>
+</script> *@

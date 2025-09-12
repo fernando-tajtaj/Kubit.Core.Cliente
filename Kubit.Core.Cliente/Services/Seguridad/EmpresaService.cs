@@ -1,4 +1,4 @@
-﻿using Kubit.Core.Modelo;
+﻿using Kubit.Core.Modelo.Schemas.Seguridad;
 
 namespace Kubit.Core.Cliente.Services.Seguridad
 {
@@ -13,13 +13,22 @@ namespace Kubit.Core.Cliente.Services.Seguridad
 
         public async Task<List<Fn_Empresa_Correo>> GetEmpresasUsuarioAsync(string pUsuarioCorreo)
         {
-            var response = await this._httpClient.GetAsync($"/api/empresa/correo?pUsuarioCorreo={Uri.EscapeDataString(pUsuarioCorreo)}");
+            try
+            {
+                var response = await this._httpClient.GetAsync($"/api/empresa/correo?pUsuarioCorreo={Uri.EscapeDataString(pUsuarioCorreo)}");
 
-            if (!response.IsSuccessStatusCode)
-                return new List<Fn_Empresa_Correo>();
+                if (!response.IsSuccessStatusCode)
+                    return new List<Fn_Empresa_Correo>();
 
-            var resultado = await response.Content.ReadFromJsonAsync<List<Fn_Empresa_Correo>>();
-            return resultado ?? new List<Fn_Empresa_Correo>();
+                var resultado = await response.Content.ReadFromJsonAsync<List<Fn_Empresa_Correo>>();
+                return resultado ?? new List<Fn_Empresa_Correo>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+            return new List<Fn_Empresa_Correo>();
         }
     }
 }

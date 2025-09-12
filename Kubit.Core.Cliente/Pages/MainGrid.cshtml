@@ -1,29 +1,25 @@
 ﻿@page "/MainGrid"
+@using System.Text.Json
 
 @model Kubit.Core.Cliente.Pages.MainGridModel
-@{
-    var Datos = this.Model.Datos ?? new List<Dictionary<string, object>>();
-    var Columnas = Datos.FirstOrDefault()?.Keys;
-}
 
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item fw-bold">@this.Model.MenuPadre</li>
-        <li class="breadcrumb-item fw-bold" aria-current="page">@this.Model.MenuHijo</li>
+        <li class="breadcrumb-item fw-bold">@this.Model.Directorio</li>
     </ol>
 </nav>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div class="btn-group ms-auto" role="group" aria-label="Button group with nested dropdown">
-        <button class="btn btn-light d-flex align-items-center gap-2"
-                onclick="openModalForm('valorcatalogo')">
-            <span class="material-symbols-outlined fs-5">new_window</span>
-            <span class="fw-bold">Agregar</span>
-        </button>
-
+        <form method="post">
+            <button type="submit" asp-page-handler="RedirectToForm" class="btn btn-light d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined fs-5">new_window</span>
+                <span>Agregar</span>
+            </button>
+        </form>
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="fw-bold">Exportar</span>
+                <span>Exportar</span>
             </button>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#">Excel</a></li>
@@ -33,50 +29,30 @@
     </div>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th scope="col">#</th>
-            @foreach (var col in Columnas)
-            {
-                <th scope="col">@col</th>
-            }
-            <th scope="col"></th> <!-- Para botones -->
-        </tr>
-    </thead>
-    <tbody>
-        @if (Datos.Any())
-        {
-            var index = 1;
-            foreach (var fila in Datos)
-            {
-                <tr>
-                    <th scope="row">@index</th>
-                    @foreach (var col in Columnas)
-                    {
-                        <td>@(fila.ContainsKey(col) ? fila[col]?.ToString() : "")</td>
-                    }
-                    <td>
-                        <button class="btn btn-light btn-sm p-1">
-                            <span class="material-symbols-outlined fs-5">edit</span>
-                        </button>
-                        <button class="btn btn-light btn-sm p-1">
-                            <span class="material-symbols-outlined fs-5">delete</span>
-                        </button>
-                    </td>
-                </tr>
-                index++;
-            }
-        }
-        else
-        {
-            <tr>
-                <td colspan="5">Sin datos</td>
-            </tr>
-        }
-    </tbody>
-</table>
+<br />
+<div id="tabla-container"></div>
 
-<script type="text/javascript" src="~/js/mainform.js"></script>
-<script type="text/javascript" src="~/js/Plantillas/functionModal.js"></script>
-<script type="text/javascript" src="~/js/Plantillas/functionDropdownList.js"></script>
+@{
+    var gridJson = Model.Fn_ParamConsulta_Vista_Json;
+    var columnas = gridJson?.Columnas;
+    var datos = gridJson?.Datos;
+
+    bool columnasValidas = columnas.HasValue && columnas.Value.ValueKind != JsonValueKind.Undefined;
+    bool datosValidos = datos.HasValue && datos.Value.ValueKind != JsonValueKind.Undefined;
+}
+
+@if (columnasValidas)
+{
+    var columnasJson = JsonSerializer.Serialize(columnas);
+    var datosJson = JsonSerializer.Serialize(datos);
+
+    <script type="text/javascript">
+        require(['functionGrid'], function(grid) {
+            const columnas = @Html.Raw(columnasJson);
+            const datos = @Html.Raw(datosJson);
+
+            console.log("Columnas:", columnas);
+            grid.createView('tabla-container', columnas, datos);
+        });
+    </script>
+}

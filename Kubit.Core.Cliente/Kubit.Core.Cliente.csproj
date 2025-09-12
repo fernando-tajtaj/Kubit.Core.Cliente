@@ -17,4 +17,9 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\lib\ag-grid\" />
+    <Folder Include="wwwroot\lib\signalR\" />
+  </ItemGroup>
+
 </Project>

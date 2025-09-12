@@ -1,142 +1,78 @@
 ﻿@page "/MainForm"
+@using Kubit.Core.Modelo.Templates
+@using System.Text.Json
 @model Kubit.Core.Cliente.Pages.MainFormModel
 
-@{
-    Layout = null;
-}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item fw-bold">@this.Model.Directorio</li>
+    </ol>
+</nav>
+
+<br />
 
 <form id="mainForm" method="post" class="needs-validation" novalidate>
-    @foreach (var field in this.Model.Modelo.Columnas)
+    @{
+        int index = 0;
+    }
+
+    @foreach (var modelo in this.Model.Modelo.Campos)
     {
-        var id = $"fields.{field.Key}";
-        var label = field.Value.label;
-        var required = field.Value.required ?? false;
-        var hidden = field.Value.hidden ?? false;
-        var options = field.Value.Options;
+        var field = modelo;
+        
+        if (field.Value.Control != "submodel")
+        {
+            @await Html.PartialAsync("_Modelo", modelo)
+        }
 
-        <div class="form-group mb-3 @(hidden ? "d-none" : "")">
-            <label for="@id" class="form-label">@label</label>
-
-            @if (field.Value.control == "input")
+        else if (field.Value.Control == "submodel")
+        {
+            @if (field.Value.SubModelos != null)
             {
-                <input type="@field.Value.type"
-                id="@id"
-                name="ModeloValores[@field.Key]"
-                class="form-control"
-                value="@(Model.ModeloValores != null && Model.ModeloValores.ContainsKey(field.Key) ? Model.ModeloValores[field.Key] : "")"
-                required="@required"
-                @(field.Value.max != null ? $"max=\"{field.Value.max}\"" : "")
-                @(field.Value.min != null ? $"min=\"{field.Value.min}\"" : "")
-                @(field.Value.step != null ? $"step=\"{field.Value.step}\"" : "") />
-            }
-            else if (field.Value.control == "default")
-            {
-                string claimValue = string.Empty;
-
-                @if (field.Value.defaultType == 1)
+                foreach (var subModel in field.Value.SubModelos)
                 {
-                    claimValue = User?.FindFirst("Empresa")?.Value ?? string.Empty;
+                    var tabla = subModel.Tabla;
+                    var header = field.Value.Label;
+                    var hidden = field.Value.Hidden ?? false;
+
+                    <div class="form-group mb-3 needs-validation @(hidden ? "d-none" : "")" novalidate id="SubValores_@tabla">
+                        <div class="card mb-3">
+                            <div class="card-header fw-bold">
+                                @header
+                            </div>
+                            <div class="card-body">
+                                @await Html.PartialAsync("_SubModelo", subModel)
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="hddSubValoresT_@tabla" name="SubValores[@index].Tabla" />
+                        <input type="hidden" id="hddSubValoresD_@tabla" name="SubValores[@index].Datos" />
+
+                        <div id="render_@tabla"></div>
+                    </div>
+
+                    index++;
                 }
-                
-                <input type="text"
-                       id="@id"
-                       name="@id"
-                       class="form-control"
-                       value="@claimValue"
-                       readonly />
             }
-            else if (field.Value.control == "checkbox")
-            {
-                <div class="form-check">
-                    <input type="checkbox"
-                           id="@id"
-                           name="@id"
-                           class="form-check-input"
-                           required="@required" />
-                    <label class="form-check-label" for="@id">@label</label>
-                </div>
-            }
-            else if (field.Value.control == "select")
-            {
-                <div class="dropdown w-100">
-                    <button class="btn btn-light dropdown-toggle w-100 text-start"
-                            type="button"
-                            id="ddl_@id"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false"
-                            disabled="!@(options != null && options.Any())">
-                        <span id="ddl_@id">Seleccione una opción</span>
-                    </button>
-                     @if (options != null && options.Any())
-                     {
-                         <ul class="dropdown-menu w-100" aria-labelledby="ddl_@id">
-                             @foreach (var opt in options)
-                             {
-                                <li>
-                                    <button type="button"
-                                        class="dropdown-item"
-                                        onclick="selectDropdownOption('@id', '@opt.Value', '@opt.Label')">
-                                        @opt.Label
-                                    </button>
-                                </li>
-                             }
-                        </ul>
-                     }                
-                </div>
+        }
+    }
 
-                <input type="hidden"
-                       id="hidden_@id"
-                       name="hidden_@id"
-                       required="@required" />
-            }
-            else if (field.Value.control == "datetime")
-            {
-                <input type="datetime-local"
-                       id="@id"
-                       name="@id"
-                       class="form-control"
-                       required="@required" />
-            }
-            else if (field.Value.control == "time")
-            {
-                <input type="time"
-                       id="@id"
-                       name="@id"
-                       class="form-control"
-                       required="@required" />
-            }
-            else if (field.Value.control == "radio")
-            {
-                <div class="form-check">
-                    <input type="radio"
-                           id="@id + "_1""
-                           name="@id"
-                           value="1"
-                           class="form-check-input"
-                           required="@required" />
-                    <label class="form-check-label" for="@id + "_1"">Sí</label>
-                </div>
-                <div class="form-check">
-                    <input type="radio"
-                           id="@id + "_0""
-                           name="@id"
-                           value="0"
-                           class="form-check-input" />
-                    <label class="form-check-label" for="@id + "_0"">No</label>
-                </div>
-            }
+    <input type="hidden" name="Valores.Tabla" value="@this.Model.Modelo.Tabla" />
 
-            @if (required)
-            {
-                <div class="valid-feedback">
-                    ¡Se ve bien!
-                </div>
-                <div class="invalid-feedback">
-                    Por favor complete este campo.
-                </div>
-            }
+    <br />
+
+    @if (this.Model.Modelo.Campos?.Any() == true)
+    {
+        <div class="modal-footer d-grid gap-2 d-md-flex justify-content-md-end">
+            <button class="btn btn-light me-md-2" type="submit" onclick="submitForm(event)">Guardar</button>
+            <button class="btn btn-light" type="submit" onclick="submitRedirectToGrid('RedirectToGrid')">Salir</button>
         </div>
     }
-    
-    <br />
+    else
+    {
+        <p class='text-center'>La plantilla no está disponible. Contacte a su administrador</p>
+        <div class="modal-footer d-grid gap-2 d-md-flex justify-content-md-end">
+            <button class="btn btn-light" type="button" onclick="submitRedirectToGrid('RedirectToGrid')">Salir</button>
+        </div>
+    }
 </form>

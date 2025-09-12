@@ -1,10 +1,7 @@
-﻿using Kubit.Core.Modelo.Templates;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace Kubit.Core.Cliente.Services.Sistema
+﻿namespace Kubit.Core.Cliente.Services.Sistema
 {
     public interface IFormJsonService
     {
-        Task<TablaModelo?> GetTemplateAsync(string pProgramaTablaPrimaria);
+        Task<Modelo.Templates.Modelo?> GetTemplateAsync(string pProgramaTablaPrimaria, string pUuidEmpresa, string pAccion);
     }
 }

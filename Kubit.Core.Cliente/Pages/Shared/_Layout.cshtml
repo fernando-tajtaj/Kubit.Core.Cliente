@@ -2,6 +2,7 @@
 @using Kubit.Core.Cliente.Services
 @using Kubit.Core.Cliente.Services.Seguridad
 @using Kubit.Core.Modelo
+@using Kubit.Core.Modelo.Schemas.Seguridad
 
 @inject IPermisoService PermisosService
 
@@ -11,7 +12,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Core</title>
-    <link rel="shortcut icon" href="./assets/favicon/favicon.ico" type="image/x-icon" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" />
@@ -19,8 +19,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/libs.bundle.css" />
     <link rel="stylesheet" href="~/css/theme.bundle.css" />
+    <link rel="stylesheet" href="~/lib/trumbowyg/dist/ui/trumbowyg.css">
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/js/bootbox/bootbox.min.js"></script>
+    <script src="~/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <script src="~/js/require.js"></script>
+    <script src="~/js/requireconfig.js"></script>
 </head>
 <body>
     @{
@@ -86,7 +90,7 @@
             <div class="row">
                 <div class="col-auto">
                     <div class="avatar avatar-xl rounded">
-                        <img class="avatar-img" src="./assets/img/products/earbuds.jpg" alt="..." />
+                        <img class="avatar-img" alt="..." />
                     </div>
                 </div>
                 <div class="col">
@@ -160,7 +164,7 @@
                 <div class="col-auto">
                     <!-- Avatar -->
                     <div class="avatar avatar-sm">
-                        <img class="avatar-img" src="./assets/img/photos/photo-2.jpg" alt="..." />
+                        <img class="avatar-img" alt="..." />
                     </div>
                 </div>
                 <div class="col">
@@ -184,7 +188,7 @@
                 <div class="col-auto">
                     <!-- Avatar -->
                     <div class="avatar avatar-sm">
-                        <img class="avatar-img" src="./assets/img/photos/photo-1.jpg" alt="..." />
+                        <img class="avatar-img" alt="..." />
                     </div>
                 </div>
                 <div class="col">
@@ -208,7 +212,7 @@
                 <div class="col-auto">
                     <!-- Avatar -->
                     <div class="avatar avatar-sm">
-                        <img class="avatar-img" src="./assets/img/photos/photo-3.jpg" alt="..." />
+                        <img class="avatar-img" alt="..." />
                     </div>
                 </div>
                 <div class="col">
@@ -257,7 +261,7 @@
                         <div class="col">
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
-                                    <img class="avatar-img rounded" src="./assets/img/products/vr-headset.jpg" alt="..." />
+                                    <img class="avatar-img rounded" alt="..." />
                                 </div>
                                 <div class="ms-4">
                                     <div>VR Headset</div>
@@ -272,7 +276,7 @@
                         <div class="col">
                             <div class="d-flex align-items-center">
                                 <div class="avatar">
-                                    <img class="avatar-img rounded" src="./assets/img/products/smart-watch.jpg" alt="..." />
+                                    <img class="avatar-img rounded" alt="..." />
                                 </div>
                                 <div class="ms-4">
                                     <div>Smart Watch</div>
@@ -419,7 +423,7 @@
         <nav class="navbar navbar-expand-xl navbar-vertical">
             <div class="container-lg">
                 <!-- Brand -->
-                <a class="navbar-brand fs-5 fw-bold text-xl-center mb-xl-4" href="./index.html">
+                <a class="navbar-brand fs-5 fw-bold text-xl-center mb-xl-4" href="Index">
                     <i class="bi bi-grid-1x2 me-2"></i>
                     <span class="d-xl-none ms-1">core</span>
                 </a>
@@ -549,7 +553,7 @@
         <nav class="navbar navbar-expand-xl navbar-vertical">
             <div class="container-lg">
                 <!-- Brand -->
-                <a class="navbar-brand fs-5 fw-bold text-xl-center mb-xl-4" href="./index.html">
+                <a class="navbar-brand fs-5 fw-bold text-xl-center mb-xl-4" href="Index">
                     <i class="bi bi-grid-1x2 me-2"></i>
                     <span class="d-xl-none ms-1">core</span>
                 </a>
@@ -679,7 +683,7 @@
         <nav class="navbar navbar-expand-xl navbar-vertical">
             <div class="container-lg">
                 <!-- Brand -->
-                <a class="navbar-brand d-flex align-items-center fs-5 fw-bold px-xl-3 mb-xl-4" href="./index.html">
+                <a class="navbar-brand d-flex align-items-center fs-5 fw-bold px-xl-3 mb-xl-4" href="Index">
                     <i class="bi bi-grid-1x2 me-2"></i> core
                 </a>
 
@@ -805,7 +809,7 @@
     <nav class="navbar navbar-expand-xl topnav-base">
         <div class="container-lg">
             <!-- Brand -->
-            <a class="navbar-brand d-flex align-items-center fs-5 fw-bold" href="./index.html">
+            <a class="navbar-brand d-flex align-items-center fs-5 fw-bold" href="Index">
                 <i class="bi bi-grid-1x2 me-2"></i>core
             </a>
 
@@ -992,9 +996,8 @@
             @RenderBody()
         </div>
     </main>
-    <script src="~/js/popper.min.js"></script>
-    <script src="~/js/bootstrap.min.js"></script>
     <script src="~/js/script.js" asp-append-version="true"></script>
+    <script type="text/javascript" src="~/js/mainform.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,0 +1,98 @@
+﻿@page
+@model Kubit.Core.Cliente.Pages.Custom.ModulosModel
+
+@using Kubit.Core.Cliente.Services.Seguridad
+@using Kubit.Core.Modelo.Schemas.Seguridad
+
+@inject IPermisoService PermisosService
+
+@{
+    ViewData["Title"] = "Módulos";
+}
+@{
+    List<Fn_Menu_Permisos> permisos;
+
+    var usuarioEmpresaUuid = User.FindFirst(System.Security.Claims.ClaimTypes.GroupSid)?.Value;
+
+    if (!string.IsNullOrEmpty(usuarioEmpresaUuid))
+    {
+        permisos = await this.PermisosService.GetMenuPermisosByUserAsync(usuarioEmpresaUuid);
+    }
+    else
+    {
+        permisos = new List<Fn_Menu_Permisos>();
+    }
+
+    // Listas para organizar
+    var parents = new List<Fn_Menu_Permisos>();
+    var childrens = new List<Fn_Menu_Permisos>();
+
+    if (permisos.Any())
+    {
+        parents = permisos
+            .Where(x => x.UuidMenuPadre == null)
+            .OrderBy(x => x.MenuOrden)
+            .ToList();
+    }
+}
+
+<div class="container my-5">
+    <h2 class="mb-4 text-left">Gestión de Permisos</h2>
+    <div class="row g-4">
+        @foreach (var parent in parents)
+        {
+            // Obtener hijos del parent
+            childrens = permisos
+            .Where(x => x.UuidMenuPadre == parent.MenuUuid)
+            .OrderBy(x => x.MenuOrden)
+            .ToList();
+
+            var modalId = "modal_" + parent.MenuUuid;
+
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <span class="material-symbols-outlined me-2 fs-1">@parent.MenuIcono</span>
+                        </div>
+                        <h5 class="card-title">@parent.MenuNombre</h5>
+                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#@modalId" style="--bs-btn-padding-y: .25rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem;">
+                            Configurar Permisos
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Dinámico por parent -->
+            <div class="modal fade" id="@modalId" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Permisos - @parent.MenuNombre</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row row-cols-2 row-cols-md-3 g-3">
+                                @foreach (var child in childrens)
+                                {
+                                    <div class="col">
+                                        <div class="form-check text-center">
+                                            <input class="form-check-input" type="checkbox" id="permiso_@child.MenuPermisoUuid">
+                                            <label class="form-check-label" for="permiso_@child.MenuPermisoUuid">@child.MenuNombre</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer ">
+                            <div class="btn-group" role="group" aria-label="Basic example">
+                                <button class="btn btn-dark" data-bs-dismiss="modal">Cerrar</button>
+                                <button class="btn btn-warning">Guardar Cambios</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

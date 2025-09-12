@@ -47,8 +47,6 @@ namespace Kubit.Core.Cliente.Pages.Autenticacion
                 new Claim(ClaimTypes.Sid, usuario.UsuarioUuid),
                 new Claim(ClaimTypes.Name, $"{usuario.UsuarioNombre} {usuario.UsuarioApellido}"),
                 new Claim(ClaimTypes.Email, usuario.UsuarioCorreo),
-                new Claim("EmpresaUuid", usuario.EmpresaUuid),
-                new Claim("EmpresaDesc", usuario.EmpresaNombre),
                 new Claim(ClaimTypes.GroupSid, usuario.UsuarioEmpresaUuid)                
             };
 
@@ -56,6 +54,10 @@ namespace Kubit.Core.Cliente.Pages.Autenticacion
             var principal = new ClaimsPrincipal(identity);
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+            this.HttpContext.Session.SetString("UsuarioUuid", usuario.UsuarioUuid);
+            this.HttpContext.Session.SetString("EmpresaUuid", usuario.EmpresaUuid);
+            this.HttpContext.Session.SetString("EmpresaDesc", usuario.EmpresaNombre);
 
             return RedirectToPage(usuario.UsuarioPrimerLogin
                 ? "/Autenticacion/FirstLogin"

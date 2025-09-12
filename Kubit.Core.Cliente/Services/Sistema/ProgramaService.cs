@@ -1,5 +1,4 @@
-﻿using Kubit.Core.Modelo;
-using Kubit.Core.Modelo.Templates;
+﻿using Kubit.Core.Modelo.Schemas.Sistema;
 using System.Text.Json;
 
 namespace Kubit.Core.Cliente.Services.Sistema

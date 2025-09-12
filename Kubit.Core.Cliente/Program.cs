@@ -1,4 +1,6 @@
-using Kubit.Core.Cliente.Services.Busqueda;
+using Kubit.Core.Cliente.Handlers;
+using Kubit.Core.Cliente.Services.Consulta;
+using Kubit.Core.Cliente.Services.Ejecucion;
 using Kubit.Core.Cliente.Services.Seguridad;
 using Kubit.Core.Cliente.Services.Sistema;
 
@@ -38,11 +40,20 @@ builder.Services.AddHttpClient<IProgramaService, ProgramaService>(client =>
     client.BaseAddress = new Uri("http://core-servicios.com/");
 });
 
-builder.Services.AddHttpClient<IParamBusquedaService, ParamBusquedaService>(client =>
+builder.Services.AddHttpClient<IParamConsultaService, ParamConsultaService>(client =>
 {
     client.BaseAddress = new Uri("http://core-servicios.com/");
 });
 
+builder.Services.AddHttpClient<IEjecucionService, EjecucionService>(client =>
+{
+    client.BaseAddress = new Uri("http://core-servicios.com/");
+});
+
+builder.Services.AddScoped<ConsultaHandler>();
+builder.Services.AddScoped<SqlHandler>();
+
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthorization();
 builder.Services.AddSession(options =>
 {

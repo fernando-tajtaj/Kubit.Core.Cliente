@@ -1,9 +1,9 @@
-﻿@using Kubit.Core.Modelo
-@model List<Kubit.Core.Modelo.Fn_Menu_Permisos>
+﻿@using Kubit.Core.Modelo.Schemas.Seguridad
+@model List<Fn_Menu_Permisos>
 
 @{
-    IOrderedEnumerable<Kubit.Core.Modelo.Fn_Menu_Permisos> parents = 
-    new List<Kubit.Core.Modelo.Fn_Menu_Permisos>().OrderBy(x => 0);
+    IOrderedEnumerable<Fn_Menu_Permisos> parents = 
+    new List<Fn_Menu_Permisos>().OrderBy(x => 0);
 
     if (Model is not null)
     {

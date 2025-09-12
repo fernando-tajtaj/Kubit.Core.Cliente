@@ -24,7 +24,6 @@
 }
 
 function showErrorModal(message) {
-    // Si el modal no existe, lo creamos
     if (!document.getElementById('errorModal')) {
         const modalErrorHTML = `
         <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
@@ -70,18 +69,13 @@ async function submitForm(event) {
         const result = await response.json();
 
         if (result.success) {
-            // Cerrar modal principal
-            const modalElement = document.getElementById('mainFormModal');
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            modalInstance.hide();
-
             // Mostrar modal de éxito
             showSuccessModal(result.message, true);
 
-            // Refrescar el grid si existe
-            if (typeof refreshGrid === 'function') {
-                refreshGrid();
-            }
+            setTimeout(() => {
+                submitRedirectToGrid();
+            }, 1500);
+
         } else {
             // Mostrar modal de error
             showErrorModal(result.message);
@@ -91,4 +85,28 @@ async function submitForm(event) {
     }
 
     return false;
+}
+
+function submitRedirectToGrid() {
+    const form = document.getElementById('mainForm');
+    if (form) {
+        fetch('?handler=RedirectToGrid', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(new FormData(form))
+        })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+}
+
+function getCsrfToken() {
+    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+    return tokenInput?.value || '';
 }
