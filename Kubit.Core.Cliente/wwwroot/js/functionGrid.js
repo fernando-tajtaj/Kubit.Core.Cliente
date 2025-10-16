@@ -66,7 +66,7 @@
             trHead.appendChild(th);
 
             const thFilter = document.createElement('th');
-            if (col.filtrar === 1 && col.tipofiltro === 1) {
+            if (col.filtrar === true && col.tipofiltro === 1) {
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'form-control form-control-sm';
@@ -187,7 +187,7 @@
         table.renderRows(filtrados);
     }
 
-    function createGrid(tabla, modelo, columnas, datos) {
+    function createGrid(tabla, modelo, columnas, datos, fieldComputed) {
         const container = document.getElementById(`div_${tabla}`);
 
         if (!container) {
@@ -195,76 +195,121 @@
             return;
         }
 
-        // Registrar la tabla en la colección
-        gridCollection[tabla] = {
-            modelo,
-            columnas,
-            datos
-        };
-
+        gridCollection[tabla] = { modelo, columnas, datos };
         container.innerHTML = '';
 
         const table = document.createElement('table');
         table.className = 'table table-striped table-bordered table-hover';
 
         const thead = document.createElement('thead');
-        const trHead = document.createElement('tr');
-
-        // Filtrar columnas visibles una vez
-        const visibleColumns = columnas.filter(c => !c.hidden);
-
-        // Crear encabezados
-        for (const col of visibleColumns) {
-            const th = document.createElement('th');
-            th.textContent = col.name || col.id;
-            trHead.appendChild(th);
-        }
-
-        thead.appendChild(trHead);
-        table.appendChild(thead);
-
         const tbody = document.createElement('tbody');
 
-        // Mostrar "Sin datos" si la lista está vacía
+        const visibleColumns = columnas.filter(c => !c.hidden);
+
         if (datos.length === 0) {
+            // Mostrar "sin datos" como encabezado
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            td.colSpan = visibleColumns.length;
-            td.className = 'text-center text-muted row-sin-datos';
-            td.textContent = 'Sin datos';
+            td.colSpan = visibleColumns.length + 1;
+            td.className = 'text-center';
+
+            td.innerHTML = `
+                <div class="text-muted py-3">
+                    <i class="bi bi-inbox" style="font-size:2rem;"></i><br>
+                    Sin datos disponibles
+                </div>
+            `;
+
             tr.appendChild(td);
-            tbody.appendChild(tr);
+            thead.appendChild(tr); // lo mostramos en el thead
         } else {
-            // Crear filas normales
+            // Crear encabezados normales
+            const trHead = document.createElement('tr');
+            visibleColumns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col.name || col.id;
+                trHead.appendChild(th);
+            });
+            // Columna para eliminar
+            const thDelete = document.createElement('th');
+            trHead.appendChild(thDelete);
+
+            thead.appendChild(trHead);
+
+            // Crear filas
             for (const row of datos) {
                 const tr = document.createElement('tr');
+
                 for (const col of visibleColumns) {
                     const td = document.createElement('td');
                     td.textContent = row[col.id] ?? '';
                     tr.appendChild(td);
                 }
+
+                // Columna eliminar
+                const tdDelete = document.createElement('td');
+                tdDelete.className = 'text-center';
+                const btnDelete = document.createElement('button');
+                btnDelete.type = 'button';
+                btnDelete.className = 'btn btn-sm btn-warning';
+                btnDelete.textContent = 'Eliminar';
+
+                // asignar la función global, pasando los parámetros necesarios
+                btnDelete.addEventListener('click', () => {
+                    deleteGridRow(tabla, row, fieldComputed);
+                });
+
+                tdDelete.appendChild(btnDelete);
+
+                tr.appendChild(tdDelete);
                 tbody.appendChild(tr);
             }
         }
 
+        table.appendChild(thead);
         table.appendChild(tbody);
         container.appendChild(table);
     }
 
-    async function addGridRow(tabla) {
+    async function addGridRow(tabla, fieldComputed) {
         const g = gridCollection[tabla];
         if (!g) return console.warn('Coleccion no encontrada:', tabla);
 
-        const { modelo, datos, columnas } = g;
+        const { modelo, datos } = g;
 
+        // Procesar el modelo: valores base, archivos, validaciones
+        const { valid, errores, valoresBase, valoresBaseJson, camposFile, campoExistente } = processModel(modelo, datos);
+
+        if (!valid) {
+            showErrors(errores);
+            return;
+        }
+
+        // Procesar archivos si los hay
+        if (camposFile.length > 0) {
+            await processFiles(camposFile, tabla);
+        }
+
+        const requiereUUID = modelo.some(m => m.id === 'uuid' && m.valor === '');
+
+        // Procesar filas: agregar nueva o merge si existe
+        await processRows(tabla, valoresBase, valoresBaseJson, campoExistente, fieldComputed, requiereUUID);
+
+        cleanModel(modelo);
+
+        // Actualizar grilla y hidden input
+        updateGrid(tabla, fieldComputed);
+    }
+
+    function processModel(modelo, datos) {
         let valid = true;
         const errores = [];
-
-        const valoresBase = {};      // Para fila completa
-        const valoresBaseJson = {};  // Para JSON final (filtrado)
+        const valoresBase = {};
+        const valoresBaseJson = {};
         const camposFile = [];
+        const campoExistente = {};
 
-        for (const { id, name, valor, tablaprincipal, requerido, unico } of modelo) {
+        for (const { id, name, valor, tablaprincipal, requerido, unico, modo } of modelo) {
             if (id === 'uuid' && valor === '') continue;
 
             if (valor === 'uuidforeignkey') {
@@ -276,7 +321,7 @@
             const input = document.getElementById(valor);
 
             if (input && input.type === 'file') {
-                camposFile.push({ id, name, inputId: input.id, requerido, unico, tablaprincipal });
+                camposFile.push({ id, name, inputId: input.id, requerido, unico, modo, tablaprincipal });
                 continue;
             }
 
@@ -287,32 +332,41 @@
                 errores.push(`Falta ${name}`);
             }
 
-            if (unico && datos.some(r => r[id] === v)) {
+            if (unico && modo === 'alert' && datos.some(r => r[id] === v)) {
                 valid = false;
                 errores.push(`${name} duplicado`);
             }
 
-            valoresBase[id] = v;
-            if (tablaprincipal) {
-                valoresBaseJson[id] = v;
+            if (unico && modo === 'merge') {
+                const registroExistente = datos.find(r => r[id] === v);
+                if (registroExistente) campoExistente[id] = v;
             }
+
+            valoresBase[id] = v;
+            if (tablaprincipal) valoresBaseJson[id] = v;
         }
 
-        if (!valid) {
-            require(['functionFind'], f => f.openModalMessage('error', errores.join('\n')));
-            return;
-        }
+        return { valid, errores, valoresBase, valoresBaseJson, camposFile, campoExistente };
+    }
 
-        // 2) Procesar archivos
-        if (camposFile.length > 0) {
-            const [functionPhoto] = await requireAsync(['functionPhoto']);
-            camposFile.forEach(cf => functionPhoto.addPhoto(cf.inputId, tabla));
-        }
+    function showErrors(errores) {
+        require(['functionFind'], f => f.openModalMessage('error', errores.join('<br>')));
+    }
 
-        const requiereUUID = modelo.some(m => m.id === 'uuid' && m.valor === '');
+    async function processFiles(camposFile, tabla) {
+        const [functionPhoto] = await requireAsync(['functionPhoto']);
+        camposFile.forEach(cf => functionPhoto.addPhoto(cf.inputId, tabla));
+    }
 
-        // 3) Construir filas
-        if (camposFile.length === 0) {
+    async function processRows(tabla, valoresBase, valoresBaseJson, campoExistente, fieldComputed, requiereUUID) {
+        const g = gridCollection[tabla];
+        if (!g) return console.warn('Coleccion no encontrada:', tabla);
+
+        const datos = g.datos;
+        const [functionMask] = await requireAsync(['functionMask']);
+
+        if (Object.keys(campoExistente).length === 0) {
+            // --- Nueva fila ---
             const filaCompleta = { ...valoresBase };
             const filaJson = { ...valoresBaseJson };
 
@@ -322,68 +376,91 @@
                 filaJson.uuid = uuid;
             }
 
+            // Calcular campos dinámicos
+            const calculados = functionMask.computeValues(filaCompleta, fieldComputed);
+            Object.assign(filaCompleta, calculados);
+
+            // Agregar fila al array de datos
             datos.push(filaCompleta);
-            g.datosJson = g.datosJson || [];
-            g.datosJson.push(filaJson);
 
         } else {
-            for (const { id, name, inputId, requerido, unico, tablaprincipal } of camposFile) {
-                const inputFile = document.getElementById(inputId);
-                const files = Array.from(inputFile?.files || []).filter(f => f.type.startsWith('image/'));
+            // --- Merge con fila existente ---
+            for (const [clave, valor] of Object.entries(campoExistente)) {
+                const registroExistente = datos.find(r => r[clave] === valor);
+                if (!registroExistente) continue;
 
-                if (requerido && files.length === 0) {
-                    valid = false;
-                    errores.push(`Falta ${name}`);
-                    continue;
-                }
+                Object.keys(valoresBase).forEach(campo => {
+                    const nuevoValor = valoresBase[campo];
+                    const valorExistente = registroExistente[campo];
 
-                for (const f of files) {
-                    const nuevoValor = f.name;
-                    if (unico && datos.some(r => r[id] === nuevoValor)) {
-                        valid = false;
-                        errores.push(`${name} duplicado (${nuevoValor})`);
-                        continue;
+                    const nuevoNum = parseFloat(nuevoValor);
+                    const existenteNum = parseFloat(valorExistente);
+
+                    if (!isNaN(nuevoNum) && !isNaN(existenteNum)) {
+                        registroExistente[campo] = existenteNum + nuevoNum;
+                    } else if (valorExistente === undefined || valorExistente === null || valorExistente === '') {
+                        registroExistente[campo] = nuevoValor;
                     }
+                });
 
-                    const filaCompleta = { ...valoresBase, [id]: nuevoValor };
-                    const filaJson = { ...valoresBaseJson };
-                    if (tablaprincipal) {
-                        filaJson[id] = nuevoValor;
-                    }
-
-                    if (requiereUUID) {
-                        const uuid = crypto.randomUUID().replace(/-/g, '').toLowerCase();
-                        filaCompleta.uuid = uuid;
-                        filaJson.uuid = uuid;
-                    }
-
-                    datos.push(filaCompleta);
-                    g.datosJson = g.datosJson || [];
-                    g.datosJson.push(filaJson);
-                }
+                // Recalcular campos dinámicos en la fila existente
+                const calculados = functionMask.computeValues(registroExistente, fieldComputed);
+                Object.assign(registroExistente, calculados);
             }
         }
+    }
+    function updateGrid(tabla, fieldComputed) {
+        const { modelo, columnas, datos } = gridCollection[tabla];
 
-        if (!valid) {
-            require(['functionFind'], f => f.openModalMessage('error', errores.join('\n')));
-            return;
-        }
-
-        // 4) Limpiar modelo y refrescar tabla
-        cleanModel(modelo);
-        createGrid(tabla, modelo, columnas, datos);
+        createGrid(tabla, modelo, columnas, datos, fieldComputed);
 
         const hddSubValoresT = document.getElementById(`hddSubValoresT_${tabla}`);
         const hddSubValoresD = document.getElementById(`hddSubValoresD_${tabla}`);
 
-        if (hddSubValoresT) {
-            hddSubValoresT.value = tabla;
-        }
+        if (hddSubValoresT) hddSubValoresT.value = tabla;
 
         if (hddSubValoresD) {
-            hddSubValoresD.value = JSON.stringify(g.datosJson || []);
+            // Solo columnas principales para guardar en BD
+            const datosFiltrados = datos.map(fila => {
+                const filaFiltrada = {};
+                modelo.forEach(m => {
+                    if (m.tablaprincipal) filaFiltrada[m.id] = fila[m.id];
+                });
+                return filaFiltrada;
+            });
+            hddSubValoresD.value = JSON.stringify(datosFiltrados);
         }
     }
+
+    // función para eliminar una fila y recalcular la grilla
+    async function deleteGridRow(tabla, row, fieldComputed) {
+        const g = gridCollection[tabla];
+        if (!g) return console.warn('Coleccion no encontrada:', tabla);
+
+        const { modelo, columnas, datos } = g; // obtenemos todo desde la colección
+        const index = datos.indexOf(row);
+
+        if (index > -1) {
+            // eliminar la fila
+            datos.splice(index, 1);
+
+            // recalcular campos dinámicos para las filas restantes
+            const [functionMask] = await requireAsync(['functionMask']);
+            if (datos.length == 0) {
+
+            }
+            else {
+                datos.forEach(fila => {
+                    const calculados = functionMask.computeValues(fila, fieldComputed);
+                    Object.assign(fila, calculados);
+                });
+            }
+
+            // reconstruir la grilla
+            createGrid(tabla, modelo, columnas, datos, fieldComputed);
+        }
+    }
+
     function cleanModel(modelo) {
         // Limpiar los controles utilizados
         modelo.forEach(({ valor }) => {

@@ -71,6 +71,7 @@
                class="form-control"
                value="@valorCargado"
                required="@required"
+               disabled="@disabled"
                @Html.Raw(onchangeAttr)
                @Html.Raw(oninputAttr) />
     }
@@ -127,12 +128,13 @@
 
         var paramConsulta = field.Value.ParamConsulta;
         var ctrlParent = field.Value.CtrlParent;
+        var fieldsMapping = field.Value.FieldMappings;
 
         <div class="input-group mb-3" id="div_@id">
             <input type="text" id="val_@id" class="form-control" placeholder="Buscar @label..." readonly />
 
             <button type="button" class="btn btn-light d-flex align-items-center gap-2"
-                    onclick="require(['functionFind'], function(find) { find.openFindModal('@id', '@paramConsulta', '@ctrlParent', false); })">
+                    onclick="require(['functionFind'], function(find) { find.openFindModal('@id', '@paramConsulta', '@ctrlParent', false, '@fieldsMapping'); })">
                 <span class="material-symbols-outlined fs-5">search</span>
             </button>
 

@@ -5,140 +5,183 @@
         return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     }
 
-    function openFindModal(fieldId, uuidParamBusqueda, ctrlParent, subModelo, index) {
-        const modalId = `modal_${fieldId}`;
-
-        // Si ya existe, eliminarlo para regenerarlo con datos actualizados
-        const existingModal = document.getElementById(modalId);
-        if (existingModal) {
-            existingModal.remove();
+    // Render filas de la tabla
+    function generateRows(id, columns, data, fieldMappings) {
+        if (data.length === 0) {
+            return `<tr><td colspan="${columns.length + 1}" class="text-center">
+            <div class="text-muted">
+                <i class="bi bi-inbox" style="font-size:2rem;"></i><br>
+                Sin datos disponibles
+            </div>
+        </td></tr>`;
         }
 
-        let valParents;
-        let paramParents = '';
+        return data.map(row => {
+            const cells = columns.map(col => {
+                let value = row[col.id] ?? '';
+
+                if (typeof value === 'string' && value.startsWith('tag|')) {
+                    const items = value.substring(4).split(',').map(i => i.trim());
+                    value = items.map(item =>
+                        `<span class="badge text-bg-secondary me-1">${item}</span>`
+                    ).join(' ');
+                }
+
+                return `<td>${value}</td>`;
+            }).join('');
+
+            const idValue = escapeForSingleQuotes(row.uuid);
+            const nameValueShow = row.id ?? row[columns[0].id];
+            const nameValue = escapeForSingleQuotes(nameValueShow);
+
+            return `
+            <tr>${cells}<td>
+                <button aria-label="Buscar" class="btn btn-sm btn-light" 
+                    onclick='require(["functionFind"], function(find) { 
+                        find.selectFindValue(
+                            "${id}", 
+                            "${idValue}", 
+                            "${nameValue}", 
+                            ${JSON.stringify(row)},
+                            ${fieldMappings ? JSON.stringify(fieldMappings) : "null"}
+                        ); 
+                    });'>
+                    Seleccionar
+                </button>
+        </td></tr>`;
+        }).join('');
+    }
+
+    // Render tabla completa
+    function renderTable(id, json, fieldMappings) {
+        const visibleColumns = json.columnas.filter(c => !c.hidden);
+        const columnFilters = Object.fromEntries(json.columnas.map(c => [c.id, c.filtrar]));
+
+        const headers = visibleColumns.map(col => `<th>${col.name}</th>`).join('');
+        const filterInputs = visibleColumns.map(col =>
+            columnFilters[col.id] === 1
+                ? `<th><input type="text" class="form-control form-control-sm" data-col="${col.id}" placeholder="Buscar..." /></th>`
+                : `<th></th>`
+        ).join('');
+
+        return `
+        <table class="table table-hover border-dark" id="tabla_${id}">
+            <thead>
+                <tr>${headers}<th></th></tr>
+                <tr>${filterInputs}<th></th></tr>
+            </thead>
+            <tbody>
+                ${generateRows(id, visibleColumns, json.datos, fieldMappings)}
+            </tbody>
+        </table>`;
+    }
+
+    // Agregar eventos a filtros
+    function attachFindFilters(id, table, columns, data) {
+        const inputs = table.querySelectorAll('thead input[data-col]');
+        const tbody = table.querySelector('tbody');
+
+        inputs.forEach(input => {
+            input.addEventListener("input", () => {
+                const filtros = {};
+                inputs.forEach(i => {
+                    const val = i.value.trim().toLowerCase();
+                    if (val) filtros[i.dataset.col] = val;
+                });
+
+                const filtrados = data.filter(row =>
+                    Object.entries(filtros).every(([col, val]) =>
+                        (row[col] ?? '').toString().toLowerCase().includes(val)
+                    )
+                );
+
+                tbody.innerHTML = generateRows(id, columns, filtrados);
+            });
+        });
+    }
+
+    // Abrir modal
+    function openFindModal(id, uuidParamBusqueda, ctrlParent, subModelo, fieldMappings) {
+        const modalId = `modal_${id}`;
+        document.getElementById(modalId)?.remove();
+
+        let valParents = '';
 
         if (ctrlParent) {
-            let valCtrlParent;
-
-            if (!subModelo) {
-                const elements = document.getElementsByName(`Valores.Campos[${ctrlParent}]`);
-                if (elements.length > 0) {
-                    valCtrlParent = elements[0];
-                    valParents = valCtrlParent.value;
-                }
-            } else {
-                valCtrlParent = document.getElementById(ctrlParent);
-                if (valCtrlParent) {
-                    valParents = valCtrlParent.value;
-                }
-            }
-
-            if (valParents) {
-                paramParents = `${ctrlParent}=${encodeURIComponent(valParents)}`;
-            }
+            const ctrl = subModelo
+                ? document.getElementById(ctrlParent)
+                : document.getElementsByName(`Valores.Campos[${ctrlParent}]`)[0];
+            if (ctrl) valParents = `${ctrlParent}=${encodeURIComponent(ctrl.value)}`;
         }
 
-        fetch(`?handler=ConsultaDatos&pParamConsultaUuid=${encodeURIComponent(uuidParamBusqueda)}&${paramParents}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Error al obtener datos");
-                return response.json();
-            })
+        fetch(`?handler=ConsultaDatos&pParamConsultaUuid=${encodeURIComponent(uuidParamBusqueda)}&${valParents}`)
+            .then(r => r.json())
             .then(json => {
-                const visibleColumns = json.columnas.filter(c => !c.hidden);
-                const columnFilters = Object.fromEntries(json.columnas.map(c => [c.id, c.filtrar]));
-
-                const headers = visibleColumns.map(col => `<th>${col.name}</th>`).join('');
-                const filterInputs = visibleColumns.map(col => {
-                    return columnFilters[col.id] === 1
-                        ? `<th><input type="text" class="form-control form-control-sm" data-col="${col.id}" placeholder="Buscar..." /></th>`
-                        : `<th></th>`;
-                }).join('');
-
-                const generateRows = (data) => {
-                    if (data.length === 0) {
-                        return `<tr><td colspan="${visibleColumns.length + 1}" class="text-center">Sin datos disponibles.</td></tr>`;
-                    }
-
-                    return data.map(row => {
-                        const cells = visibleColumns.map(col => `<td>${row[col.id] ?? ''}</td>`).join('');
-                        const nombreParaMostrarRaw = row.id ?? row[visibleColumns[0].id];
-                        const nombreParaMostrar = escapeForSingleQuotes(nombreParaMostrarRaw);
-                        const uuidEscaped = escapeForSingleQuotes(row.uuid);
-                        const fieldIdEscaped = escapeForSingleQuotes(fieldId);
-
-                        return `<tr>${cells}<td>
-                        <button class="btn btn-sm btn-light" onclick="require(['functionFind'], function(find) { find.selectFindValue('${fieldIdEscaped}', '${uuidEscaped}', '${nombreParaMostrar}'); });">Seleccionar</button>
-                    </td></tr>`;
-                    }).join('');
-                };
-
                 const modalHtml = `
-            <div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}_label" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="${modalId}_label">Buscar</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <table class="table table-hover border-dark" id="tabla_${fieldId}">
-                                <thead>
-                                    <tr>${headers}<th></th></tr>
-                                    <tr>${filterInputs}<th></th></tr>
-                                </thead>
-                                <tbody>
-                                    ${generateRows(json.datos)}
-                                </tbody>
-                            </table>
+                <div class="modal fade" id="${modalId}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Buscar</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${renderTable(id, json, fieldMappings)}
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>`;
+                </div>`;
 
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
                 const modal = new bootstrap.Modal(document.getElementById(modalId));
                 modal.show();
 
-                // Filtros dinámicos
-                const table = document.getElementById(`tabla_${fieldId}`);
-                const inputs = table.querySelectorAll('thead input[data-col]');
-                const tbody = table.querySelector('tbody');
+                // enganchar filtros
+                const table = document.getElementById(`tabla_${id}`);
+                const columns = json.columnas.filter(c => !c.hidden);
+                const data = json.datos;
 
-                inputs.forEach(input => {
-                    input.addEventListener("input", () => {
-                        const filtros = {};
-                        inputs.forEach(i => {
-                            const val = i.value.trim().toLowerCase();
-                            if (val) filtros[i.dataset.col] = val;
-                        });
-
-                        const filtrados = json.datos.filter(row => {
-                            return Object.entries(filtros).every(([col, val]) => {
-                                return (row[col] ?? '').toString().toLowerCase().includes(val);
-                            });
-                        });
-
-                        tbody.innerHTML = generateRows(filtrados);
-                    });
-                });
+                attachFindFilters(id, table, columns, data);
             })
-            .catch(error => {
-                console.error("Error al abrir modal de búsqueda:", error);
-                alert("No se pudo cargar la búsqueda.");
-            });
+            .catch(err => console.error("Error al abrir modal de búsqueda:", err));
     }
 
-    function selectFindValue(fieldId, idValue, nameValue) {
-        document.getElementById(`${fieldId}`).value = idValue;
-        document.getElementById(`val_${fieldId}`).value = nameValue;
+    // Selección y limpieza
+    function selectFindValue(id, idValue, nameValue, data, fieldMappings) {
+        document.getElementById(`${id}`).value = idValue;
+        document.getElementById(`val_${id}`).value = nameValue;
 
-        const modal = bootstrap.Modal.getInstance(document.getElementById(`modal_${fieldId}`));
-        modal.hide();
+        if (fieldMappings) {
+            let mappingsObj;
+
+            if (typeof fieldMappings === "string") {
+                try {
+                    mappingsObj = JSON.parse(fieldMappings);
+                } catch (e) {
+                    console.error("fieldMappings no es JSON válido:", fieldMappings);
+                    mappingsObj = null;
+                }
+            } else {
+                mappingsObj = fieldMappings;
+            }
+
+            if (mappingsObj && data) {
+                for (const [col, targetId] of Object.entries(mappingsObj)) {
+                    if (data[col] !== undefined) {
+                        const target = document.getElementById(targetId);
+                        if (target) {
+                            target.value = data[col];
+                        }
+                    }
+                }
+            }
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById(`modal_${id}`))?.hide();
     }
-
-    function clearFindValue(fieldId) {
-        document.getElementById(`${fieldId}`).value = '';
-        document.getElementById(`val_${fieldId}`).value = '';
+    function clearFindValue(id) {
+        document.getElementById(`${id}`).value = '';
+        document.getElementById(`val_${id}`).value = '';
     }
 
     function openModalMessage(type, message) {
@@ -190,7 +233,7 @@
         };
 
         titulo.textContent = tipoTitulo[type] || 'Mensaje';
-        mensaje.textContent = message;
+        mensaje.innerHTML = message;
 
         // Crear instancia y mostrar modal con Bootstrap
         const bsModal = new bootstrap.Modal(modalDiv);

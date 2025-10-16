@@ -58,8 +58,65 @@
         }
     }
 
+    /**
+     * Calcula los valores de los campos dinámicos a partir de un registro y un objeto de fórmulas.
+     * @param {Object} rowData - Registro con los valores de los campos existentes.
+     * @param {Object} fieldComputed - Objeto con campos y fórmulas. Ej: { total: "campo_preciounitario * campo_cantidad" }
+     * */
+    function computeValues(data, fieldComputed) {
+        const resultados = {};
+
+        if (!fieldComputed) return resultados;
+
+        let computedObj;
+
+        if (typeof fieldComputed === "string") {
+            try {
+                computedObj = JSON.parse(fieldComputed);
+            } catch (e) {
+                console.error("fieldComputed no es JSON válido:", fieldComputed);
+                computedObj = null;
+            }
+        } else {
+            computedObj = fieldComputed;
+        }
+
+        for (const [destino, formula] of Object.entries(computedObj)) {
+            try {
+                let expr = formula;
+
+                Object.keys(data).forEach(key => {
+                    let value = data[key] || 0;
+
+                    if (value.includes('Q')) {
+                        value = value.replace(/Q/g, '');
+                    }
+
+                    value = parseFloat(value) || 0;
+
+                    const regex = new RegExp(`\\b${key}\\b`, 'g');
+                    expr = expr.replace(regex, value);
+                });
+
+                const target = document.getElementById(destino);
+
+                if (target) {
+                    const valorActual = parseFloat(target.value) || 0;
+                    const valorNuevo = Function(`"use strict"; return (${expr});`)();
+                    target.value = valorActual + valorNuevo; // suma real
+                }
+            } catch (err) {
+                console.error(`Error calculando ${destino} con "${formula}":`, err);
+                resultados[destino] = 0;
+            }
+        }
+
+        return resultados;
+    }
+
     return {
         validateMaxLength,
-        validatePrecisionScale
+        validatePrecisionScale,
+        computeValues
     };
 });

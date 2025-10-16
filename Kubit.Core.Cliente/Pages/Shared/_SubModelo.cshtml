@@ -73,6 +73,7 @@
                    class="form-control"
                    value="@valorCargado"
                    required="@required"
+                   disabled="@disabled"
                    @Html.Raw(onchangeAttr)
                    @Html.Raw(oninputAttr) />
         }
@@ -116,16 +117,17 @@
 
             var paramConsulta = field.Value.ParamConsulta;
             var ctrlParent = field.Value.CtrlParent;
+            var fieldsMapping = field.Value.FieldMappings;
 
             <div class="input-group mb-3" id="div_@id">
                 <input type="text" id="val_@id" class="form-control" placeholder="Buscar @label..." readonly />
 
-                <button type="button" class="btn btn-light d-flex align-items-center gap-2"
-                        onclick="require(['functionFind'], function(find) { find.openFindModal('@id', '@paramConsulta', '@ctrlParent', true); })">
+                <button type="button" aria-label="Buscar" class="btn btn-light d-flex align-items-center gap-2"
+                        onclick="require(['functionFind'], function(find) { find.openFindModal('@id', '@paramConsulta', '@ctrlParent', true, '@fieldsMapping'); })">
                     <span class="material-symbols-outlined fs-5">search</span>
                 </button>
 
-                <button type="button" class="btn btn-light d-flex align-items-center gap-2"
+                <button type="button" aria-label="Limpiar" class="btn btn-light d-flex align-items-center gap-2"
                         onclick="require(['functionFind'], function(find) { find.clearFindValue('@id'); })">
                     <span class="material-symbols-outlined fs-5">mop</span>
                 </button>
@@ -216,10 +218,12 @@
         }
         else if (field.Value.Control == "grid")
         {
+            var fieldComputed = field.Value.FieldComputed;
+
             <div class="text-end mt-2">
                 <button type="button"
                         class="btn btn-light d-inline-flex align-items-center gap-2"
-                        onclick="require(['functionGrid'], function (functionGrid) { functionGrid.addGridRow('@tabla') });;">
+                        onclick="require(['functionGrid'], function (functionGrid) { functionGrid.addGridRow('@tabla', '@fieldComputed') });;">
                     <span class="material-symbols-outlined fs-5">add_notes</span>Agregar
                 </button>
             </div>
@@ -235,7 +239,7 @@
                     const columnas = @Html.Raw(field.Value.Columnas);
                     const datos = @Html.Raw(field.Value.Datos);
 
-                    functionGrid.createGrid('@tabla', modelo, columnas, datos);
+                    functionGrid.createGrid('@tabla', modelo, columnas, datos, '@fieldComputed');
                 });
             </script>
         }
